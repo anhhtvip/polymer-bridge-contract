@@ -72,7 +72,7 @@ switch-client:
 
 # Run the full E2E flow by setting the contracts, deploying them, creating a channel, and sending a packet
 # Usage: just do-it
-do-it:
+do-bridge:
     echo "Running the full E2E flow..."
     just set-contracts optimism XBridge false && just set-contracts base XBridge false
     just deploy optimism base
