@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import "../base/CustomChanIbcApp.sol";
+import "../base/UniversalChanIbcApp.sol";
 
-contract XBridge is CustomChanIbcApp {
+contract XBridgeUC is UniversalChanIbcApp {
     enum IbcPacketStatus {
         UNSENT,
         SENT,
@@ -39,13 +39,14 @@ contract XBridge is CustomChanIbcApp {
     mapping(bytes32 => BridgeIbcPacket) public bridgePackets;
     mapping(uint256 => uint256) public balances;
 
-    constructor(IbcDispatcher _dispatcher) CustomChanIbcApp(_dispatcher) {}
+    constructor(address _middleware) UniversalChanIbcApp(_middleware) {}
 
     function setChainId(uint256 _chainId) external onlyOwner {
         chainId = _chainId;
     }
 
     function deposit(
+        address destPortAddr,
         bytes32 channelId,
         uint64 timeoutSeconds
     ) external payable {
@@ -61,11 +62,16 @@ contract XBridge is CustomChanIbcApp {
             ibcStatus: IbcPacketStatus.UNSENT
         });
         depositPackets[id] = ibcPacket;
-        bytes memory data = abi.encode(IbcPacketType.DEPOSIT, abi.encode(ibcPacket));
-        sendPacket(channelId, timeoutSeconds, data);
+        bytes memory payload = abi.encode(IbcPacketType.DEPOSIT, abi.encode(ibcPacket));
+        uint64 timeoutTimestamp = uint64((block.timestamp + timeoutSeconds) * 1000000000);
+
+        IbcUniversalPacketSender(mw).sendUniversalPacket(
+            channelId, IbcUtils.toBytes32(destPortAddr), payload, timeoutTimestamp
+        );
     }
 
     function bridge(
+        address destPortAddr,
         bytes32 channelId,
         uint64 timeoutSeconds,
         uint256 toChainId
@@ -83,42 +89,33 @@ contract XBridge is CustomChanIbcApp {
             ibcStatus: IbcPacketStatus.UNSENT
         });
         bridgePackets[id] = ibcPacket;
-        bytes memory data = abi.encode(IbcPacketType.BRIDGE, abi.encode(ibcPacket));
-        sendPacket(channelId, timeoutSeconds, data);
-    }
+        bytes memory payload = abi.encode(IbcPacketType.BRIDGE, abi.encode(ibcPacket));
+        uint64 timeoutTimestamp = uint64((block.timestamp + timeoutSeconds) * 1000000000);
 
-    // ----------------------- IBC logic  -----------------------
-    /**
-     * @dev Sends a packet with the caller address over a specified channel.
-     * @param channelId The ID of the channel (locally) to send the packet to.
-     * @param timeoutSeconds The timeout in seconds (relative).
-     */
-    function sendPacket(
-        bytes32 channelId,
-        uint64 timeoutSeconds,
-        bytes memory payload
-    ) internal {
-        // setting the timeout timestamp at 10h from now
-        uint64 timeoutTimestamp = uint64(
-            (block.timestamp + timeoutSeconds) * 1000000000
+        IbcUniversalPacketSender(mw).sendUniversalPacket(
+            channelId, IbcUtils.toBytes32(destPortAddr), payload, timeoutTimestamp
         );
-
-        // calling the Dispatcher to send the packet
-        dispatcher.sendPacket(channelId, payload, timeoutTimestamp);
     }
+
+    // IBC logic
 
     /**
      * @dev Packet lifecycle callback that implements packet receipt logic and returns and acknowledgement packet.
      *      MUST be overriden by the inheriting contract.
      *
-     * @param packet the IBC packet encoded by the source and relayed by the relayer.
+     * @param channelId the ID of the channel (locally) the packet was received on.
+     * @param packet the Universal packet encoded by the source and relayed by the relayer.
      */
-    function onRecvPacket(
-        IbcPacket memory packet
-    ) external override onlyIbcDispatcher returns (AckPacket memory ackPacket) {
-        recvedPackets.push(packet);
+    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
+        external
+        override
+        onlyIbcMw
+        returns (AckPacket memory ackPacket)
+    {
+        recvedPackets.push(UcPacketWithChannel(channelId, packet));
+
         (IbcPacketType packetType, bytes memory data) = abi.decode(
-            packet.data,
+            packet.appData,
             (IbcPacketType, bytes)
         );
 
@@ -133,20 +130,25 @@ contract XBridge is CustomChanIbcApp {
         } else{
             revert("Invalid packet type");
         }
-        return AckPacket(true, packet.data);
+
+        return AckPacket(true, packet.appData);
     }
 
     /**
      * @dev Packet lifecycle callback that implements packet acknowledgment logic.
      *      MUST be overriden by the inheriting contract.
      *
+     * @param channelId the ID of the channel (locally) the ack was received on.
+     * @param packet the Universal packet encoded by the source and relayed by the relayer.
      * @param ack the acknowledgment packet encoded by the destination and relayed by the relayer.
      */
-    function onAcknowledgementPacket(
-        IbcPacket calldata,
-        AckPacket calldata ack
-    ) external override onlyIbcDispatcher {
-        ackPackets.push(ack);
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external
+        override
+        onlyIbcMw
+    {
+        ackPackets.push(UcAckWithChannel(channelId, packet, ack));
+
         (IbcPacketType packetType, bytes memory data) = abi.decode(
             ack.data,
             (IbcPacketType, bytes)
@@ -168,26 +170,11 @@ contract XBridge is CustomChanIbcApp {
      *      MUST be overriden by the inheriting contract.
      *      NOT SUPPORTED YET
      *
-     * @param packet the IBC packet encoded by the counterparty and relayed by the relayer
+     * @param channelId the ID of the channel (locally) the timeout was submitted on.
+     * @param packet the Universal packet encoded by the counterparty and relayed by the relayer
      */
-    function onTimeoutPacket(
-        IbcPacket calldata packet
-    ) external override onlyIbcDispatcher {
-        timeoutPackets.push(packet);
-        (IbcPacketType packetType, bytes memory data) = abi.decode(
-            packet.data,
-            (IbcPacketType, bytes)
-        );
-        if (packetType == IbcPacketType.DEPOSIT) {
-            DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
-            depositPackets[depositPacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
-            balances[depositPacket.chainId] -= depositPacket.amount;
-        } else if (packetType == IbcPacketType.BRIDGE) {
-            BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
-            bridgePackets[bridgePacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
-            balances[bridgePacket.toChainId] += bridgePacket.amount;
-        } else {
-            revert("Invalid packet type");
-        }
+    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external override onlyIbcMw {
+        timeoutPackets.push(UcPacketWithChannel(channelId, packet));
+        // do logic
     }
 }

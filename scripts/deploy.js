@@ -24,10 +24,10 @@ async function main() {
   let constructorArgs;
   if (config.isUniversal) {
     const ucHandlerAddr = getUcHandlerAddress(networkName);
-    constructorArgs = [ucHandlerAddr, hre.network.config.chainId, ...(args ?? [])];
+    constructorArgs = [ucHandlerAddr, ...(args ?? [])];
   } else if (!config.isUniversal) {
     const dispatcherAddr = getDispatcherAddress(networkName);
-    constructorArgs = [dispatcherAddr, hre.network.config.chainId, ...(args ?? [])];
+    constructorArgs = [dispatcherAddr, ...(args ?? [])];
   }
 
   // Deploy the contract
@@ -35,6 +35,7 @@ async function main() {
   const myContract = await hre.ethers.deployContract(contractType, constructorArgs);
 
   await myContract.waitForDeployment();
+  await myContract.setChainId(hre.network.config.chainId);
 
   // NOTE: Do not change the output string, its output is formatted to be used in the deploy-config.js script
   // to update the config.json file

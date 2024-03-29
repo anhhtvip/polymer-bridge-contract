@@ -1,42 +1,67 @@
 {
-  "proofsEnabled": false,
+  "proofsEnabled": true,
   "deploy": {
-    "optimism": "XBridge",
-    "base": "XBridge"
+    "optimism": "XBridgeUC",
+    "base": "XBridgeUC"
   },
-  "isUniversal": false,
+  "isUniversal": true,
   "createChannel": {
     "srcChain": "optimism",
-    "srcAddr": "0x18C380f81544f2965A9D29a6Ad6dD7730330078D",
+    "srcAddr": "0x1234567890AbCdEf1234567890aBcDeF12345678",
     "dstChain": "base",
-    "dstAddr": "0xcC62AD0Da5d0C964D550347562Ab9D607e0AE7bb",
+    "dstAddr": "0x1234567890AbCdEf1234567890aBcDeF12345678",
     "version": "1.0",
     "ordering": 0,
     "fees": false
   },
   "sendPacket": {
     "optimism": {
-      "portAddr": "0x18C380f81544f2965A9D29a6Ad6dD7730330078D",
+      "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
       "channelId": "channel-n",
       "timeout": 36000
     },
     "base": {
-      "portAddr": "0xcC62AD0Da5d0C964D550347562Ab9D607e0AE7bb",
+      "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
       "channelId": "channel-n",
       "timeout": 36000
     }
   },
   "sendUniversalPacket": {
     "optimism": {
-      "portAddr": "0x62CbeEECaeeDe342fC8A3BEC6834e470623b7869",
-      "channelId": "channel-10",
+      "portAddr": "0x32290cd8Ea245671f59Fe8C8280F0ab4786AcB34",
+      "channelId": "channel-16",
       "timeout": 36000
     },
     "base": {
-      "portAddr": "0xCBedd6A25699BF2C0C6B9c61493B0F2603b6698F",
-      "channelId": "channel-11",
+      "portAddr": "0x5Da536c790A442A92d04819f8798c54Cf58284F4",
+      "channelId": "channel-17",
       "timeout": 36000
     }
   },
-  "backup": {}
+  "backup": {
+    "sendPacket": {
+      "optimism": {
+        "portAddr": "0x74404932A88965e667ff72a8Bc077bd20ad69f5A",
+        "channelId": "channel-n",
+        "timeout": 36000
+      },
+      "base": {
+        "portAddr": "0xb985E2a8A3678B7E3A45CC19450a516f927B118C",
+        "channelId": "channel-n",
+        "timeout": 36000
+      }
+    },
+    "sendUniversalPacket": {
+      "optimism": {
+        "portAddr": "0x62CbeEECaeeDe342fC8A3BEC6834e470623b7869",
+        "channelId": "channel-10",
+        "timeout": 36000
+      },
+      "base": {
+        "portAddr": "0xCBedd6A25699BF2C0C6B9c61493B0F2603b6698F",
+        "channelId": "channel-11",
+        "timeout": 36000
+      }
+    }
+  }
 }

@@ -78,7 +78,6 @@ do-it:
     just deploy optimism base
     just sanity-check
     just create-channel
-    just send-packet optimism base
     echo "You've done it!"
 
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
