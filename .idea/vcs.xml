@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/base64" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/openzeppelin-contracts/lib/erc4626-tests" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/openzeppelin-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/clones-with-immutable-args" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/clones-with-immutable-args/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/openzeppelin-contracts-upgradeable" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/safe-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/solmate" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/optimism/packages/contracts-bedrock/lib/solmate/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/lib/vibc-core-smart-contracts/lib/protobuf3-solidity-lib" vcs="Git" />
+  </component>
+</project>

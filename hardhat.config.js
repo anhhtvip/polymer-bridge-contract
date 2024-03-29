@@ -12,12 +12,13 @@ module.exports = {
         enabled: true,
         runs: 200 // Optimize for a typical number of runs
       }
-    }    
+    }
   },
   networks: {
     // for Base testnet
     'base': {
       url: 'https://sepolia.base.org',
+      chainId: 84532,
       accounts: [
         process.env.PRIVATE_KEY_1
       ],
@@ -25,10 +26,11 @@ module.exports = {
     // for OP testnet
     'optimism': {
       url: 'https://sepolia.optimism.io',
+      chainId: 11155420,
       accounts: [
         process.env.PRIVATE_KEY_1
       ],
-    },    
+    },
   },
   defaultNetwork: 'optimism',
   paths: {

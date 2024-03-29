@@ -24,12 +24,12 @@ async function main() {
   let constructorArgs;
   if (config.isUniversal) {
     const ucHandlerAddr = getUcHandlerAddress(networkName);
-    constructorArgs = [ucHandlerAddr, ...(args ?? [])];
+    constructorArgs = [ucHandlerAddr, hre.network.config.chainId, ...(args ?? [])];
   } else if (!config.isUniversal) {
     const dispatcherAddr = getDispatcherAddress(networkName);
-    constructorArgs = [dispatcherAddr, ...(args ?? [])];
+    constructorArgs = [dispatcherAddr, hre.network.config.chainId, ...(args ?? [])];
   }
-  
+
   // Deploy the contract
   // NOTE: when adding additional args to the constructor, add them to the array as well
   const myContract = await hre.ethers.deployContract(contractType, constructorArgs);

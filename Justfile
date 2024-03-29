@@ -58,9 +58,9 @@ create-channel:
 # Send a packet over the universal channel or a custom channel as defined in the config.json file
 # The source argument is REQUIRED;
 # Usage: just send-packet [source]
-send-packet SOURCE:
+send-packet SOURCE DESTINATION:
     echo "Sending a packet with the values from the config..."
-    node scripts/private/_send-packet-config.js {{SOURCE}}
+    node scripts/send-package.js {{SOURCE}} {{DESTINATION}}
 
 # Switch between the sim client and the client with proofs
 # Usage: just switch-client
@@ -74,11 +74,11 @@ switch-client:
 # Usage: just do-it
 do-it:
     echo "Running the full E2E flow..."
-    just set-contracts optimism XCounter false && just set-contracts base XCounter false
+    just set-contracts optimism XBridge false && just set-contracts base XBridge false
     just deploy optimism base
     just sanity-check
     just create-channel
-    just send-packet optimism
+    just send-packet optimism base
     echo "You've done it!"
 
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
