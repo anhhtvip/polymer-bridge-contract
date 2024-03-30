@@ -80,6 +80,16 @@ do-bridge:
     just create-channel
     echo "You've done it!"
 
+deposit:
+    echo "Depositing..."
+    npx hardhat run scripts/XBridge/deposit.js --network base
+    echo "Deposit complete!"
+
+bridge:
+    echo "Bridging..."
+    npx hardhat run scripts/XBridge/bridge.js --network optimism
+    echo "Bridge complete!"
+
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
 # Usage: just clean
 clean:

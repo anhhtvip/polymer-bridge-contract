@@ -39,6 +39,13 @@ contract XBridge is CustomChanIbcApp {
     mapping(bytes32 => BridgeIbcPacket) public bridgePackets;
     mapping(uint256 => uint256) public balances;
 
+    event Deposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event Bridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
+    event RecvDeposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event RecvBridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
+    event AckDeposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event AckBridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
+
     constructor(IbcDispatcher _dispatcher) CustomChanIbcApp(_dispatcher) {}
 
     function setChainId(uint256 _chainId) external onlyOwner {
@@ -63,6 +70,7 @@ contract XBridge is CustomChanIbcApp {
         depositPackets[id] = ibcPacket;
         bytes memory data = abi.encode(IbcPacketType.DEPOSIT, abi.encode(ibcPacket));
         sendPacket(channelId, timeoutSeconds, data);
+        emit Deposit(id, chainId, msg.sender, amount);
     }
 
     function bridge(
@@ -72,7 +80,8 @@ contract XBridge is CustomChanIbcApp {
     ) external payable {
         require(balances[toChainId] >= msg.value, "Insufficient balance");
         uint256 amount = msg.value;
-        balances[chainId] -= amount;
+        balances[chainId] += amount;
+        balances[toChainId] -= amount;
         bytes32 id = keccak256(abi.encodePacked(msg.sender, amount, block.timestamp));
         BridgeIbcPacket memory ibcPacket = BridgeIbcPacket({
             id: id,
@@ -85,6 +94,7 @@ contract XBridge is CustomChanIbcApp {
         bridgePackets[id] = ibcPacket;
         bytes memory data = abi.encode(IbcPacketType.BRIDGE, abi.encode(ibcPacket));
         sendPacket(channelId, timeoutSeconds, data);
+        emit Bridge(id, chainId, toChainId, msg.sender, amount);
     }
 
     // ----------------------- IBC logic  -----------------------
@@ -125,11 +135,13 @@ contract XBridge is CustomChanIbcApp {
         if (packetType == IbcPacketType.DEPOSIT) {
             DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
             balances[depositPacket.chainId] += depositPacket.amount;
+            emit RecvDeposit(depositPacket.id, depositPacket.chainId, depositPacket.sender, depositPacket.amount);
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
-            balances[bridgePacket.fromChainId] -= bridgePacket.amount;
-            balances[bridgePacket.toChainId] += bridgePacket.amount;
+            balances[bridgePacket.fromChainId] += bridgePacket.amount;
+            balances[bridgePacket.toChainId] -= bridgePacket.amount;
             payable(bridgePacket.sender).transfer(bridgePacket.amount);
+            emit RecvBridge(bridgePacket.id, bridgePacket.fromChainId, bridgePacket.toChainId, bridgePacket.sender, bridgePacket.amount);
         } else{
             revert("Invalid packet type");
         }
@@ -154,10 +166,11 @@ contract XBridge is CustomChanIbcApp {
         if (packetType == IbcPacketType.DEPOSIT) {
             DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
             depositPackets[depositPacket.id].ibcStatus = IbcPacketStatus.ACKED;
+            emit AckDeposit(depositPacket.id, depositPacket.chainId, depositPacket.sender, depositPacket.amount);
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
             bridgePackets[bridgePacket.id].ibcStatus = IbcPacketStatus.ACKED;
-            balances[bridgePacket.fromChainId] += bridgePacket.amount;
+            emit AckBridge(bridgePacket.id, bridgePacket.fromChainId, bridgePacket.toChainId, bridgePacket.sender, bridgePacket.amount);
         } else {
             revert("Invalid packet type");
         }
@@ -185,6 +198,7 @@ contract XBridge is CustomChanIbcApp {
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
             bridgePackets[bridgePacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
+            balances[bridgePacket.fromChainId] -= bridgePacket.amount;
             balances[bridgePacket.toChainId] += bridgePacket.amount;
         } else {
             revert("Invalid packet type");

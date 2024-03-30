@@ -23,13 +23,13 @@ async function bridge() {
     const timeoutSeconds = sendConfig[`${networkName}`]["timeout"];
 
     // Send the packet
-    await ibcApp.connect(accounts[0]).bridge(
+    await ibcApp.connect(accounts[1]).bridge(
         destPortAddr,
         channelIdBytes,
         timeoutSeconds,
         Number(hre.network.config.chainId) === 84532 ? 11155420 : 84532,
         {
-            value: hre.ethers.parseEther('0.0001')
+            value: hre.ethers.parseEther('0.00001')
         }
     );
 }

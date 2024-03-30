@@ -23,7 +23,7 @@ async function bridge() {
         timeoutSeconds,
         Number(hre.network.config.chainId) === 84532 ? 11155420 : 84532,
         {
-            value: hre.ethers.parseEther('0.0001')
+            value: hre.ethers.parseEther('0.00001')
         }
     );
 }

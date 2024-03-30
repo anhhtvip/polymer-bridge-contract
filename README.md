@@ -33,6 +33,6 @@ just create-channel
 ### Send package
 
 ```bash
-npx hardhat run scripts/XBridge/deposit.js --network base
-npx hardhat run scripts/XBridge/bridge.js --network optimism
+just deposit
+just bridge
 ```
