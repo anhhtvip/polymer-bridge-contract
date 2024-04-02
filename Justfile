@@ -85,6 +85,11 @@ deposit:
     npx hardhat run scripts/XBridge/deposit.js --network base
     echo "Deposit complete!"
 
+withdraw:
+    echo "Depositing..."
+    npx hardhat run scripts/XBridge/withdraw.js --network base
+    echo "Deposit complete!"
+
 bridge:
     echo "Bridging..."
     npx hardhat run scripts/XBridge/bridge.js --network optimism

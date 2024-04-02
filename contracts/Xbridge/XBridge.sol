@@ -14,10 +14,19 @@ contract XBridge is CustomChanIbcApp {
 
     enum IbcPacketType {
         DEPOSIT,
+        WITHDRAW,
         BRIDGE
     }
 
     struct DepositIbcPacket {
+        bytes32 id;
+        uint256 chainId;
+        address sender;
+        uint256 amount;
+        IbcPacketStatus ibcStatus;
+    }
+
+    struct WithdrawIbcPacket {
         bytes32 id;
         uint256 chainId;
         address sender;
@@ -36,14 +45,18 @@ contract XBridge is CustomChanIbcApp {
 
     uint256 public chainId;
     mapping(bytes32 => DepositIbcPacket) public depositPackets;
+    mapping(bytes32 => WithdrawIbcPacket) public withdrawPackets;
     mapping(bytes32 => BridgeIbcPacket) public bridgePackets;
     mapping(uint256 => uint256) public balances;
 
     event Deposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event Withdrawal(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
     event Bridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
     event RecvDeposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event RecvWithdrawal(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
     event RecvBridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
     event AckDeposit(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
+    event AckWithdrawal(bytes32 indexed id, uint256 indexed chainId, address sender, uint256 amount);
     event AckBridge(bytes32 indexed id, uint256 indexed fromChainId, uint256 indexed toChainId, address sender, uint256 amount);
 
     constructor(IbcDispatcher _dispatcher) CustomChanIbcApp(_dispatcher) {}
@@ -71,6 +84,27 @@ contract XBridge is CustomChanIbcApp {
         bytes memory data = abi.encode(IbcPacketType.DEPOSIT, abi.encode(ibcPacket));
         sendPacket(channelId, timeoutSeconds, data);
         emit Deposit(id, chainId, msg.sender, amount);
+    }
+
+    function withdraw(
+        bytes32 channelId,
+        uint64 timeoutSeconds,
+        uint256 amount
+    ) external onlyOwner {
+        require(balances[chainId] >= amount, "Insufficient balance");
+        balances[chainId] -= amount;
+        bytes32 id = keccak256(abi.encodePacked(msg.sender, amount, block.timestamp));
+        WithdrawIbcPacket memory ibcPacket = WithdrawIbcPacket({
+            id: id,
+            chainId: chainId,
+            sender: msg.sender,
+            amount: amount,
+            ibcStatus: IbcPacketStatus.UNSENT
+        });
+        withdrawPackets[id] = ibcPacket;
+        bytes memory data = abi.encode(IbcPacketType.WITHDRAW, abi.encode(ibcPacket));
+        sendPacket(channelId, timeoutSeconds, data);
+        emit Withdrawal(id, chainId, msg.sender, amount);
     }
 
     function bridge(
@@ -136,6 +170,10 @@ contract XBridge is CustomChanIbcApp {
             DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
             balances[depositPacket.chainId] += depositPacket.amount;
             emit RecvDeposit(depositPacket.id, depositPacket.chainId, depositPacket.sender, depositPacket.amount);
+        } else if (packetType == IbcPacketType.WITHDRAW) {
+            WithdrawIbcPacket memory withdrawPacket = abi.decode(data, (WithdrawIbcPacket));
+            balances[withdrawPacket.chainId] -= withdrawPacket.amount;
+            emit RecvWithdrawal(withdrawPacket.id, withdrawPacket.chainId, withdrawPacket.sender, withdrawPacket.amount);
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
             balances[bridgePacket.fromChainId] += bridgePacket.amount;
@@ -167,6 +205,11 @@ contract XBridge is CustomChanIbcApp {
             DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
             depositPackets[depositPacket.id].ibcStatus = IbcPacketStatus.ACKED;
             emit AckDeposit(depositPacket.id, depositPacket.chainId, depositPacket.sender, depositPacket.amount);
+        } else if (packetType == IbcPacketType.WITHDRAW) {
+            WithdrawIbcPacket memory withdrawPacket = abi.decode(data, (WithdrawIbcPacket));
+            withdrawPackets[withdrawPacket.id].ibcStatus = IbcPacketStatus.ACKED;
+            payable(msg.sender).transfer(withdrawPacket.amount);
+            emit AckWithdrawal(withdrawPacket.id, withdrawPacket.chainId, withdrawPacket.sender, withdrawPacket.amount);
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
             bridgePackets[bridgePacket.id].ibcStatus = IbcPacketStatus.ACKED;
@@ -195,6 +238,10 @@ contract XBridge is CustomChanIbcApp {
             DepositIbcPacket memory depositPacket = abi.decode(data, (DepositIbcPacket));
             depositPackets[depositPacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
             balances[depositPacket.chainId] -= depositPacket.amount;
+        } else if (packetType == IbcPacketType.WITHDRAW) {
+            WithdrawIbcPacket memory withdrawPacket = abi.decode(data, (WithdrawIbcPacket));
+            withdrawPackets[withdrawPacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
+            balances[withdrawPacket.chainId] += withdrawPacket.amount;
         } else if (packetType == IbcPacketType.BRIDGE) {
             BridgeIbcPacket memory bridgePacket = abi.decode(data, (BridgeIbcPacket));
             bridgePackets[bridgePacket.id].ibcStatus = IbcPacketStatus.TIMEOUT;
