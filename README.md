@@ -1,3 +1,9 @@
+# L2 Eth Bridge
+- Frontend: https://github.com/anhhtvip/eth-bridge-polymer-chain
+- Live demo: https://bridge.tuananh.xyz
+- Video demo: https://www.youtube.com/watch?v=ZHLzDZLNSLM
+
+# How to deploy the bridge
 ## Run All Task
 
 ```bash
